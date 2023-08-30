@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build -p 8080",
+    "build": "next build",
     "dev": "next dev",
     "postinstall": "prisma generate",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start -p 3001"
   },
   "dependencies": {
     "@prisma/client": "^5.1.1",
