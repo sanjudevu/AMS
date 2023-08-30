@@ -1,12 +1,28 @@
 import Head from "next/head";
 import Link from "next/link";
+import React from "react";
 
 import { api } from "~/utils/api";
 
 export default function Home() {
-  const hello = api.example.hello.useQuery({ text: "from tRPC" });
+  // const hello = api.example.hello.useQuery({ text: "from tRPC" });
+  const allData = api.example.getAll.useQuery();
+  console.log(allData.data);
 
-  return (
+  const userNameRef = React.useRef<HTMLInputElement>(null);
+
+  const { mutate, error } = api.example.create.useMutation();
+
+  const pushToDB = () => {
+    const userName = userNameRef.current?.value;
+    if (userName) {
+      console.log(userName);
+      mutate({name: userName})
+    }
+  };
+
+
+    return (
     <>
       <Head>
         <title>Create T3 App</title>
@@ -42,9 +58,36 @@ export default function Home() {
               </div>
             </Link>
           </div>
-          <p className="text-2xl text-white">
+          {/* <p className="text-2xl text-white">
             {hello.data ? hello.data.greeting : "Loading tRPC query..."}
-          </p>
+          </p> */}
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
+            {allData.data?.map((data) => (
+              <div key={data.id} className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20">
+                <h3 className="text-2xl font-bold">{data.name}</h3>
+                <div className="text-lg">
+                  {data.createdAt.toString()}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* create an input text field and a button to collect user name */}
+          <div className="flex flex-col gap-4">
+            <input
+              className="bg-white/10 p-4 rounded-xl text-white"
+              placeholder="Enter your name"
+              ref={userNameRef}
+            />
+            <button className="bg-white/10 p-4 rounded-xl text-white" onClick={pushToDB}>
+              Submit
+            </button>
+          </div>
+
+          <Link href="/employee/details" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+              Go to employee Details
+          </Link>
         </div>
       </main>
     </>

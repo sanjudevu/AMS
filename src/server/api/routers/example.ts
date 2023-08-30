@@ -11,6 +11,19 @@ export const exampleRouter = createTRPCRouter({
       };
     }),
   getAll: publicProcedure.query(({ ctx }) => {
+    console.log(ctx.basicAuthSecret);
     return ctx.prisma.example.findMany();
   }),
+
+  create: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .mutation(({ input, ctx }) => {
+      console.log(ctx.basicAuthSecret);
+      return ctx.prisma.example.create({
+        data: {
+          name: input.name,
+        },
+      });
+    }
+  ),
 });
