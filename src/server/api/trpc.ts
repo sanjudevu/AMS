@@ -6,8 +6,11 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { User } from "@prisma/client";
+import { TRPCError, initTRPC } from "@trpc/server";
 import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
+import { NodeHTTPRequest, NodeHTTPResponse } from "@trpc/server/dist/adapters/node-http";
+import { NextRequest, NextResponse } from "next/server";
 import superjson from "superjson";
 import { OpenApiMeta } from "trpc-openapi";
 import { ZodError } from "zod";
@@ -37,16 +40,37 @@ type CreateContextOptions = Record<string, never>;
  */
 
 
-const basicAuthSecret = {
-  username: "sampleUsername",
-  password: "samplePassword"
-}
 
-const createInnerTRPCContext = (_opts: CreateContextOptions) => {
+const createInnerTRPCContext = async (_opts: CreateNextContextOptions) => {
+
+  let user: User|null = null;
+
+  try {
+
+    const auth = _opts.req.headers.authorization! ;
+
+    const decode = (str: string):string => Buffer.from(str, 'base64').toString('binary');
+
+    const [username, password] = decode(auth.split(" ")[1] ?? "").split(':');
+
+    console.log(`username: ${username}, password: ${password} auth: ${auth}`);
+
+    // check if username or password is undefined or empty
+    if (!username || !password) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Username or password is empty",
+      });
+    }
+
+    user =  await dbActions.validateUserWithPassword(username, password);
+  } catch (error) {}
+
+
   return {
     prisma,
-    basicAuthSecret,
-    dbActions
+    dbActions,
+    user
   };
 };
 
@@ -57,7 +81,7 @@ const createInnerTRPCContext = (_opts: CreateContextOptions) => {
  * @see https://trpc.io/docs/context
  */
 export const createTRPCContext = (_opts: CreateNextContextOptions) => {
-  return createInnerTRPCContext({});
+  return createInnerTRPCContext(_opts);
 };
 
 /**
@@ -96,6 +120,37 @@ const t = initTRPC.context<typeof createTRPCContext>().meta<OpenApiMeta>().creat
  */
 export const createTRPCRouter = t.router;
 
+export const useAuth = t.middleware(({ctx, next}) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Unauthorized",
+    });
+  }
+  return next({ctx});
+});
+
+// role based access
+export const useRole = (roles: string[]) => (t.middleware(({ctx, next}) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Unauthorized",
+    });
+  }
+
+  if (!roles.includes(ctx.user.type)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Permission denied",
+    });
+  }
+
+  return next({ctx});
+}));
+
+
+
 /**
  * Public (unauthenticated) procedure
  *
@@ -103,4 +158,15 @@ export const createTRPCRouter = t.router;
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
+
+// eslint-disable-next-line react-hooks/rules-of-hooks
+const ADMIN_ROLE = useRole(["ADMIN"]);
+// eslint-disable-next-line react-hooks/rules-of-hooks
+const STAFF_ROLE = useRole(["ADMIN", "STAFF"]);
+
 export const publicProcedure = t.procedure;
+export const privateProcedure = t.procedure.use(useAuth);
+export const adminProcedure = t.procedure.use(useAuth).use(ADMIN_ROLE)
+export const staffProcedure = t.procedure.use(useAuth).use(STAFF_ROLE);
+
+

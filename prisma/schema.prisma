@@ -18,6 +18,13 @@ model Example {
 }
 
 model Employee {
-    id        String   @id @default(cuid())
-    name      String
+    id   String @id @default(cuid())
+    name String
+}
+
+model User {
+    email    String @id @unique
+    name     String
+    password String
+    type     String @default("STUDENT")
 }
