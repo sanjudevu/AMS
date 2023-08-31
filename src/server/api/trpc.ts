@@ -12,6 +12,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { prisma } from "~/server/db";
+import dbActions from "~/server/dbActions";
 
 /**
  * 1. CONTEXT
@@ -43,7 +44,8 @@ const basicAuthSecret = {
 const createInnerTRPCContext = (_opts: CreateContextOptions) => {
   return {
     prisma,
-    basicAuthSecret
+    basicAuthSecret,
+    dbActions
   };
 };
 
