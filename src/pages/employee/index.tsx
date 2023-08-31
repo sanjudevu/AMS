@@ -34,6 +34,16 @@ export default function Details() {
     }
   });
 
+  const {mutate: update, error: updateError} = api.employee.updateById.useMutation({
+    onSettled: () => {
+      allData.refetch().then(() => {
+        console.log("refetch success");
+      }).catch((err) => {
+        console.log(err);
+      })
+    }
+  });
+
 
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -73,15 +83,17 @@ export default function Details() {
     )
   };
 
-  const handleEdit = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, id: string) => {
-    e.stopPropagation();
-    const newName = editingRef.current?.value;
-    if (newName) {
-      console.log(newName);
-    }
-    setEditingId(null);
-  };
 
+  const handleUpdateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const newName = editingRef.current?.value;
+      if (newName) {
+        console.log(newName);
+        update({id: editingId!, name: newName})
+      }
+      setEditingId(null);
+    }
+  };
 
 
   return (
@@ -117,6 +129,7 @@ export default function Details() {
                       className="border border-gray-300 rounded px-4 py-2 w-full"
                       defaultValue={item.name}
                       ref={editingRef}
+                      onKeyDown={handleUpdateKeyDown}
                     />
                   ) : (
                     item.name
@@ -128,10 +141,11 @@ export default function Details() {
                       <button
                         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                         onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                          handleEdit(event, item.id)
+                          event.stopPropagation();
+                          setEditingId(null);
                         }}
                       >
-                        Save
+                        Cancel
                       </button>
                     ) : (
                       <button

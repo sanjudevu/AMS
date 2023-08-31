@@ -31,12 +31,24 @@ async function getEmployeeById(id: string){
     return data;
 }
 
+function updateEmployeeById(id: string, name: string){
+    return prisma.employee.update({
+        where: {
+            id: id
+        },
+        data: {
+            name: name
+        }
+    }); 
+}
+
 
 const dbActions = {
-    getAllFromEmployees: getAllFromEmployees,
-    deleteEmployeeById: deleteEmployeeById,
-    createEmployee: createEmployee,
-    getEmployeeById: getEmployeeById
+    getAllFromEmployees,
+    deleteEmployeeById,
+    createEmployee,
+    getEmployeeById,
+    updateEmployeeById
 }
 
 export default dbActions;

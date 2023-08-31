@@ -35,4 +35,13 @@ export const employeeRouter = createTRPCRouter({
             return ctx.dbActions.getEmployeeById(input.id);
         }
         ),
+
+    updateById: publicProcedure
+        .input(z.object({ id: z.string(), name: z.string() }))
+        .meta({ openapi: { method: 'PUT', path: '/employee/{id}' } })
+        .output(z.promise(z.object({ id: z.string(), name: z.string() })))
+        .mutation(({ input, ctx }) => {
+            return ctx.dbActions.updateEmployeeById(input.id, input.name);
+        }
+        ),
 });
