@@ -75,6 +75,14 @@ async function deleteUserByEmail(email: string){
     });
 }
 
+async function getUserByEmail(email: string){
+    return prisma.user.findFirst({
+        where: {
+            email: email
+        }
+    });
+}
+
 
 
 
@@ -91,7 +99,8 @@ const dbActions = {
     creteUser,
     validateUserWithPassword,
     getAllFromUsers,
-    deleteUserByEmail
+    deleteUserByEmail,
+    getUserByEmail
 }
 
 export default dbActions;

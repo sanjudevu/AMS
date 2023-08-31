@@ -2,6 +2,8 @@ import Head from "next/head";
 import Link from "next/link";
 import React from "react";
 
+import { signIn } from "next-auth/react"
+
 import { api } from "~/utils/api";
 
 export default function Home() {
@@ -17,12 +19,12 @@ export default function Home() {
     const userName = userNameRef.current?.value;
     if (userName) {
       console.log(userName);
-      mutate({name: userName})
+      mutate({ name: userName })
     }
   };
 
 
-    return (
+  return (
     <>
       <Head>
         <title>Create T3 App</title>
@@ -34,6 +36,9 @@ export default function Home() {
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
           </h1>
+          <button onClick={() => { void signIn() }} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Sign In
+          </button>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
             <Link
               className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
@@ -86,7 +91,7 @@ export default function Home() {
           </div>
 
           <Link href="/employee" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-              Go to employee Details
+            Go to employee Details
           </Link>
         </div>
       </main>

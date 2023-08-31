@@ -1,4 +1,5 @@
 import { Employee } from "@prisma/client";
+import { useSession } from "next-auth/react";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import router from "next/router";
@@ -9,10 +10,14 @@ import { api } from "~/utils/api";
 
 export default function Details() {
 
+
   const allData = api.employee.getAll.useQuery();
 
   const messageRef = React.useRef<HTMLInputElement>(null);
   const editingRef = React.useRef<HTMLInputElement>(null);
+
+  const [tableError, setTableError] = React.useState<string|null>(null);
+
 
   const { mutate, error } = api.employee.deleteById.useMutation({
     onSettled: () => {
@@ -21,6 +26,11 @@ export default function Details() {
       }).catch((err) => {
         console.log(err);
       })
+    },
+
+    onError: (error)=>{
+      setTableError(error.message)
+      setTimeout(()=>{setTableError(null)}, 2000);
     }
   });
   const { mutate: create, error: createError } = api.employee.createByName.useMutation({
@@ -31,16 +41,26 @@ export default function Details() {
       }).catch((err) => {
         console.log(err);
       })
+    },
+
+    onError: (error)=>{
+      setTableError(error.message)
+      setTimeout(()=>{setTableError(null)}, 2000);
     }
   });
 
-  const {mutate: update, error: updateError} = api.employee.updateById.useMutation({
+  const { mutate: update, error: updateError } = api.employee.updateById.useMutation({
     onSettled: () => {
       allData.refetch().then(() => {
         console.log("refetch success");
       }).catch((err) => {
         console.log(err);
       })
+    },
+
+    onError: (error)=>{
+      setTableError(error.message)
+      setTimeout(()=>{setTableError(null)}, 2000);
     }
   });
 
@@ -89,7 +109,7 @@ export default function Details() {
       const newName = editingRef.current?.value;
       if (newName) {
         console.log(newName);
-        update({id: editingId!, name: newName})
+        update({ id: editingId!, name: newName })
       }
       setEditingId(null);
     }
@@ -98,6 +118,13 @@ export default function Details() {
 
   return (
     <div className="bg-gray-100 h-screen flex flex-col">
+      {tableError &&
+      
+      <div className="p-4 mb-4 m-2 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+      <span className="font-medium">Danger alert!</span> {tableError}
+    </div>
+
+      }
       <div className="flex-1 overflow-y-auto">
         <table className="table-auto w-full">
           <thead>

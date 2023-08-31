@@ -10,6 +10,8 @@ import { User } from "@prisma/client";
 import { TRPCError, initTRPC } from "@trpc/server";
 import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import { NodeHTTPRequest, NodeHTTPResponse } from "@trpc/server/dist/adapters/node-http";
+import { Session, getServerSession } from "next-auth";
+import { getSession, useSession } from "next-auth/react";
 import { NextRequest, NextResponse } from "next/server";
 import superjson from "superjson";
 import { OpenApiMeta } from "trpc-openapi";
@@ -17,6 +19,7 @@ import { ZodError } from "zod";
 
 import { prisma } from "~/server/db";
 import dbActions from "~/server/dbActions";
+import { getServerAuthSession } from "../auth";
 
 /**
  * 1. CONTEXT
@@ -43,15 +46,26 @@ type CreateContextOptions = Record<string, never>;
 
 const createInnerTRPCContext = async (_opts: CreateNextContextOptions) => {
 
+
+
   let user: User|null = null;
+
+  const { req, res } = _opts;
+  const session = await getServerAuthSession({ req, res });
+
 
   try {
 
     const auth = _opts.req.headers.authorization! ;
 
+    let username = null;
+    let password = null;
+
     const decode = (str: string):string => Buffer.from(str, 'base64').toString('binary');
 
-    const [username, password] = decode(auth.split(" ")[1] ?? "").split(':');
+    [username, password] = decode(auth.split(" ")[1] ?? "").split(':');
+
+    
 
     console.log(`username: ${username}, password: ${password} auth: ${auth}`);
 
@@ -64,8 +78,13 @@ const createInnerTRPCContext = async (_opts: CreateNextContextOptions) => {
     }
 
     user =  await dbActions.validateUserWithPassword(username, password);
+
   } catch (error) {}
 
+  if (!user && session?.user) {
+    const sessionUser = session.user.email ?? "";
+    user = await dbActions.getUserByEmail(sessionUser);
+  }
 
   return {
     prisma,
