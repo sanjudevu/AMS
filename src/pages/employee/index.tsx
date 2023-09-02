@@ -1,14 +1,33 @@
-import { Employee } from "@prisma/client";
+import { Roles } from "@prisma/client";
+import { Session } from "inspector";
 import { useSession } from "next-auth/react";
-import { revalidatePath } from "next/cache";
-import Link from "next/link";
 import router from "next/router";
+import { IUser } from "nextauth";
 import React from "react";
 import { useState } from "react";
+import Loading from "~/components/Loading";
+import NotAuthenticated from "~/components/NotAuthenticated";
+import CompleteTable from "~/components/nextui/CompleteTable";
+import CcompleteTable from "~/components/nextui/ccompleteTable";
 import { api } from "~/utils/api";
 
 
 export default function Details() {
+
+  const session = useSession();
+  console.log(session);
+  if (session.status === "loading") {
+    return <Loading />;
+  }
+  if (session.status === "unauthenticated") {
+    console.log("unauthenticated");
+    return <NotAuthenticated />;
+  }
+  return <SuccessPage user={session.data?.user} />;
+}
+
+// new next page component 
+const SuccessPage = ({user}:{user: IUser|undefined}) => {
 
 
   const allData = api.employee.getAll.useQuery();
@@ -19,7 +38,7 @@ export default function Details() {
   const [tableError, setTableError] = React.useState<string|null>(null);
 
 
-  const { mutate, error } = api.employee.deleteById.useMutation({
+  const { mutate } = api.employee.deleteById.useMutation({
     onSettled: () => {
       allData.refetch().then(() => {
         console.log("refetch success");
@@ -33,7 +52,7 @@ export default function Details() {
       setTimeout(()=>{setTableError(null)}, 2000);
     }
   });
-  const { mutate: create, error: createError } = api.employee.createByName.useMutation({
+  const { mutate: create } = api.employee.createByName.useMutation({
     onSettled: () => {
       allData.refetch().then(() => {
         console.log("refetch success");
@@ -49,7 +68,7 @@ export default function Details() {
     }
   });
 
-  const { mutate: update, error: updateError } = api.employee.updateById.useMutation({
+  const { mutate: update } = api.employee.updateById.useMutation({
     onSettled: () => {
       allData.refetch().then(() => {
         console.log("refetch success");
@@ -74,16 +93,8 @@ export default function Details() {
         create({ name: message })
       }
     }
-
   };
 
-
-
-  console.log(allData.data);
-
-  // if allData or allData.data is undefined, make it empty []
-
-  const data = allData.data ?? [];
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -96,11 +107,7 @@ export default function Details() {
     if (editingId) {
       return;
     }
-    router.push(`/employee/${itemId}`).then(
-      () => console.log("success route to details"),
-    ).catch(
-      (err) => console.log(err)
-    )
+    void router.replace(`/employee/${itemId}`)
   };
 
 
@@ -115,11 +122,11 @@ export default function Details() {
     }
   };
 
+  return <CcompleteTable/>
 
   return (
     <div className="bg-gray-100 h-screen flex flex-col">
       {tableError &&
-      
       <div className="p-4 mb-4 m-2 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
       <span className="font-medium">Danger alert!</span> {tableError}
     </div>
@@ -135,7 +142,7 @@ export default function Details() {
             </tr>
           </thead>
           <tbody>
-            {data.map((item) => (
+            {(allData?.data as unknown as {id: string, name: string;}[])?.map((item) => (
               <tr
                 key={item.id}
                 className="border-b border-gray-300 cursor-pointer"
@@ -165,35 +172,13 @@ export default function Details() {
                 <td className="px-4 py-2 text-right">
                   {
                     editingId === item.id ? (
-                      <button
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                        onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                          event.stopPropagation();
-                          setEditingId(null);
-                        }}
-                      >
-                        Cancel
-                      </button>
+                      <CancelButton setEditingId={setEditingId} adminOnly type={user?.type}/>
+                      
                     ) : (
-                      <button
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                        onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                          event.stopPropagation();
-                          setEditingId(item.id);
-                        }}
-                      >
-                        Edit
-                      </button>
+                      <EditButton setEditingId={setEditingId} itemId={item.id} adminOnly type={user?.type}/>
                     )
                   }
-                  <button
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mx-2"
-                    onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      handleDelete(event, item.id);
-                    }}
-                  >
-                    Delete
-                  </button>
+                  <DeleteButton handleDelete={handleDelete} itemId={item.id} adminOnly type={user?.type}/>
                 </td>
               </tr>
             ))}
@@ -211,4 +196,57 @@ export default function Details() {
       </div>
     </div>
   );
+};
+
+const CancelButton = (props: {setEditingId: (arg0: null) => void , adminOnly: boolean, type?: Roles}) => {
+
+  if(props.adminOnly && props.type !== Roles.ADMIN){
+    return null;
+  }
+  return (
+    <button
+      className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+      onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        event.stopPropagation();
+        props.setEditingId(null);
+      }}
+    >
+      Cancel
+    </button>
+  )
+}
+
+const EditButton = (props: {setEditingId: (arg0: string) => void, itemId: string, adminOnly: boolean, type?: Roles}) => {
+  if(props.adminOnly && props.type !== Roles.ADMIN){
+    return null;
+  }
+  return(
+    <button
+      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        event.stopPropagation();
+        props.setEditingId(props.itemId);
+      }}
+    >
+      Edit
+    </button>
+  )
+}
+
+const DeleteButton = (props: {handleDelete: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, id: string) => void, 
+    itemId: string, adminOnly: boolean, type?: Roles}) => {
+      console.log("props: ",props.adminOnly, props.type)
+  if(props.adminOnly && props.type !== Roles.ADMIN){
+    return null;
+  }
+  return(
+    <button
+      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mx-2"
+      onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        props.handleDelete(event, props.itemId);
+      }}
+    >
+      Delete
+    </button>
+  )
 }

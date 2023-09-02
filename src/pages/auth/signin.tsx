@@ -1,5 +1,5 @@
 import { signIn } from "next-auth/react";
-import { Router, useRouter } from "next/router";
+import { useRouter } from "next/router";
 import React, { useState } from "react";
 
 
@@ -26,7 +26,7 @@ export default function SignInPage() {
         console.log("Userdata",user)
         if (user?.status === 200) {
             setError(null);
-            void router.replace("/");
+            void router.back()
         } else {
             setError(user?.error ?? "Authentiation failed")
         }
@@ -45,7 +45,7 @@ export default function SignInPage() {
                         ref={userNameRef}
                         type="text"
                         id="username"
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 px-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     />
                 </div>
                 <div className="mb-4">
@@ -56,7 +56,7 @@ export default function SignInPage() {
                         ref={passwordRef}
                         type="password"
                         id="password"
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 px-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     />
                 </div>
                 <button

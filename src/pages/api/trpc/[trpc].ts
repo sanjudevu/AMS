@@ -16,4 +16,22 @@ export default createNextApiHandler({
           );
         }
       : undefined,
+  responseMeta(opts){
+    const { paths, errors, type} = opts;
+    const allOk = errors.length === 0;
+
+    const isQuery = type === 'query';
+
+    if ( allOk && isQuery) {
+      const ONE_DAY_IN_SECONDS = 60*60*24;
+      console.log("Received request for TRPC ... caching", paths, isQuery, allOk);
+      return {
+        headers:{
+          'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`
+        }
+      }
+    }
+    console.log("Received request for TRPC ", paths, isQuery, allOk);
+    return {}
+  }
 });

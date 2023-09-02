@@ -1,16 +1,18 @@
-import NextAuth, { NextAuthOptions, getServerSession } from "next-auth";
+import { type NextAuthOptions, getServerSession, type User } from "next-auth";
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { GetServerSidePropsContext } from "next/types";
+import { type GetServerSidePropsContext } from "next/types";
 import dbActions from "~/server/dbActions";
 
 export const authOptions: NextAuthOptions = {
     callbacks: {
-        session: ({ session, user }) =>{ 
-            console.log("Auth")
-            console.log(session)
-            console.log(user)
+        session: async (_opts) =>{ 
+            const user = await dbActions.getUserByEmail(_opts.session.user?.email ?? "")
             return ({
-          ...session,
+          ..._opts.session,
+            user: {
+                id: user?.email,
+                ...user
+            }
         })},
       },
 
@@ -25,20 +27,25 @@ export const authOptions: NextAuthOptions = {
                 username: { label: "Username", type: "text", placeholder: "Sanjay" },
                 password: { label: "Password", type: "password" }
             },
-            async authorize(credentials, req) {
+            async authorize(credentials) {
                 
                 const { username, password } = credentials as { username: string, password: string }
-                const user = await dbActions.validateUserWithPassword(username, password);
-                console.log(user)
-                if (!user) {
+                const isValidUser = await dbActions.validateUserWithPassword(username, password);
+                if (!isValidUser) {
                     throw new Error("User not found or Invalid credentails")
+                }
+
+                const user: User = {
+                    id: isValidUser.email ,
+                    ...isValidUser
                 }
                 return user;
             }
         })
     ],
     pages:{
-        signIn: "/auth/signin"
+        signIn: "/auth/signin",
+        signOut: "/auth/signout"
     }
 }
 

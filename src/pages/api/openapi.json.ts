@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { openApiDocument } from "~/server/api/openApiDoc";
 
 const handler = (req: NextApiRequest, res: NextApiResponse) =>{

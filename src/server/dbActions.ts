@@ -1,4 +1,6 @@
+import { DefaultArgs } from "@prisma/client/runtime/library";
 import { prisma } from "./db";
+import { type Roles, Prisma } from "@prisma/client";
 
 function getAllFromEmployees(){
     return prisma.employee.findMany();
@@ -45,7 +47,7 @@ function updateEmployeeById(id: string, name: string){
 // user
 
 
-function creteUser(email: string, name : string,  password: string, type: string ){
+function creteUser(email: string, name : string,  password: string, type: Roles ){
     return prisma.user.create({
         data: {
             email, name, password, type
@@ -56,15 +58,24 @@ function creteUser(email: string, name : string,  password: string, type: string
 async function validateUserWithPassword(email: string, password: string){
     const user = await prisma.user.findFirst({
         where: {
-            email: email,
-            password: password
+            email,
+            password
         }
     });
     return user;
 }
 
-async function getAllFromUsers(){
-    return prisma.user.findMany();
+async function getAllFromUsers(select?: Prisma.UserSelect<DefaultArgs> | undefined, orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[] | undefined, skip?: number, take?: number ){
+    
+    console.log("getAllFromUsers", select, orderBy, skip, take)
+    return prisma.user.findMany(
+        {
+            select,
+            orderBy,
+            skip,
+            take
+        }
+    );
 }
 
 async function deleteUserByEmail(email: string){

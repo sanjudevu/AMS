@@ -6,8 +6,15 @@ generator client {
 }
 
 datasource db {
-    provider = "sqlite"
+    provider = "mysql"
     url      = env("DATABASE_URL")
+}
+
+
+enum Roles {
+    ADMIN
+    STAFF
+    STUDENT
 }
 
 model Example {
@@ -25,6 +32,6 @@ model Employee {
 model User {
     email    String @id @unique
     name     String
-    password String
-    type     String @default("STUDENT")
+    password String 
+    type     Roles @default(STUDENT)
 }

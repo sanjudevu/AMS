@@ -6,16 +6,12 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { User } from "@prisma/client";
+import { type User } from "@prisma/client";
 import { TRPCError, initTRPC } from "@trpc/server";
 import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
-import { NodeHTTPRequest, NodeHTTPResponse } from "@trpc/server/dist/adapters/node-http";
-import { Session, getServerSession } from "next-auth";
-import { getSession, useSession } from "next-auth/react";
-import { NextRequest, NextResponse } from "next/server";
 import superjson from "superjson";
-import { OpenApiMeta } from "trpc-openapi";
-import { ZodError } from "zod";
+import { type OpenApiMeta } from "trpc-openapi";
+import { ZodError, any } from "zod";
 
 import { prisma } from "~/server/db";
 import dbActions from "~/server/dbActions";
@@ -29,7 +25,7 @@ import { getServerAuthSession } from "../auth";
  * These allow you to access things when processing a request, like the database, the session, etc.
  */
 
-type CreateContextOptions = Record<string, never>;
+// type CreateContextOptions = Record<string, never>;
 
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export

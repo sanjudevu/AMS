@@ -10,16 +10,11 @@ export default function Page() {
   const allData = api.employee.getById.useQuery({id: id as string});
 
   const handleGoBack = () => {
-    router.push('/employee').then(
-        () => console.log("success"),
-        ).catch(
-        (err) => console.log(err)
-        )
+    void router.replace('/employee')
   };
   
   return (
     <div className="mx-auto max-w-md bg-white rounded-lg shadow-lg p-6">
-      
       <p className="text-2xl font-bold mb-2">{allData.data?.name}</p>
       <p className="text-gray-500 mb-4">{allData.data?.id}</p>
       <button
